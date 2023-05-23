@@ -45,12 +45,16 @@ public class AuthController {
 
     @PostMapping("login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginDto loginDto){
-        Authentication authentication = authenticationManager.authenticate(
+        
+    	Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                 loginDto.getUsername(),
                 loginDto.getPassword()));
+    	
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        
         String token = jwtGenerator.generateToken(authentication);
+        
         return new ResponseEntity<>(new AuthResponseDTO(token), HttpStatus.OK);
     }
 
@@ -65,6 +69,23 @@ public class AuthController {
         user.setPassword(passwordEncoder.encode((registerDto.getPassword())));
 
         Role roles = roleRepository.findByName("USER").get();
+        user.setRoles(Collections.singletonList(roles));
+
+        userRepository.save(user);
+
+        return new ResponseEntity<>("User registered success!", HttpStatus.OK);
+    }
+    @PostMapping("registeradmin")
+    public ResponseEntity<String> registeradmin(@RequestBody RegisterDto registerDto) {
+        if (userRepository.existsByUsername(registerDto.getUsername())) {
+            return new ResponseEntity<>("Username is taken!", HttpStatus.BAD_REQUEST);
+        }
+
+        UserEntity user = new UserEntity();
+        user.setUsername(registerDto.getUsername());
+        user.setPassword(passwordEncoder.encode((registerDto.getPassword())));
+
+        Role roles = roleRepository.findByName("ADMIN").get();
         user.setRoles(Collections.singletonList(roles));
 
         userRepository.save(user);
